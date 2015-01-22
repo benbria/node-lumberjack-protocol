@@ -1,6 +1,6 @@
 {
-  "name": "lumberjack-proto",
-  "description": "Node.js implementation of the lumberjack protocol",
+  "name": "lumberjack-protocol",
+  "description": "Node.js implementation of the lumberjack protocol.",
   "keywords": [
     "logstash",
     "logstash forwarder",
@@ -26,7 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/benbria/node-lumberjack-proto"
+    "url": "https://github.com/benbria/node-lumberjack-protocol"
   },
   "dependencies": {},
   "devDependencies": {

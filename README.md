@@ -11,7 +11,7 @@ Contents
 
 * [Installation](#installation)
 * [Usage](#usage)
-* [API](https://github.com/benbria/lumberjack-proto/blob/master/API.md)
+* [API](https://github.com/benbria/node-lumberjack-protocol/blob/master/API.md)
 # [Caveats](#caveats)
 * [Troubleshooting](#troubleshooting)
 
@@ -19,7 +19,7 @@ Contents
 Installation
 ============
 
-    npm install --save lumberjack-proto
+    npm install --save lumberjack-protocol
 
 Usage
 =====
@@ -27,7 +27,7 @@ Usage
 Create a lumberjack `Client`; it will connect to the server in the background, automatically
 reconnect, and queue any messages that you try to send while disconnected:
 
-    var lumberjack = require('lumberjack-proto');
+    var lumberjack = require('lumberjack-protocol');
     var fs = require('fs');
 
     var connectionOptions = {
@@ -43,7 +43,7 @@ reconnect, and queue any messages that you try to send while disconnected:
 API
 ===
 
-Full API documentation can be found [here](https://github.com/benbria/lumberjack-proto/blob/master/API.md).
+Full API documentation can be found [here](https://github.com/benbria/node-lumberjack-protocol/blob/master/API.md).
 
 Caveats
 =======

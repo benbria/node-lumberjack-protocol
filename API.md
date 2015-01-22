@@ -16,7 +16,7 @@ TLS connection to the receiver (the logstash server.)  At a minimum, you should 
 `clientOptions` consists of:
 
 * `windowSize` - the windowSize to send to the receiver (see [caveats](#caveats) section below
-  for a discussion about how `lumberjack-proto` treats the `windowSize`.)  Defaults to 1000.
+  for a discussion about how `lumberjack-protocol` treats the `windowSize`.)  Defaults to 1000.
 
 * `maxQueueSize` - the maximum number of messages to queue while disconnected.
   If this limit is hit, all messages in the queue will be filtered with
