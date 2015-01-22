@@ -15,7 +15,7 @@ DroppedError = (message) ->
 DroppedError.prototype = Object.create(Error.prototype)
 
 
-# A simple logstash client.
+# A simple lumberjack client.
 #
 # ClientSocket will automatically send a window size frame to the receiver on connect.
 #
@@ -104,8 +104,8 @@ class ClientSocket extends EventEmitter
     # * `file` (optional) is the name of the log file.
     # * `offset` (optional) an integer - the offset of the line in the log file.
     #
-    # Additional field in `data` will be passed up to logstash.  Logstash will add these to the log
-    # entry.
+    # Additional field in `data` will be passed up to the receiver.  If the receiver is Logstash,
+    # it will add these to the log entry.
     #
     # `done` is an optional callback.
     #

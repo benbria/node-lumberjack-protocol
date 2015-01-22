@@ -4,6 +4,7 @@ assert           = require 'assert'
 ClientSocket     = require './ClientSocket'
 
 DEFAULT_QUEUE_SIZE = 500
+DEFAULT_RECONNECT_TIME_IN_MS = 3000
 
 # Connects to a lumberjack receiver and sends messages.
 #
@@ -37,7 +38,10 @@ class Client extends EventEmitter
     # * `options.allowDrop(data)` - this will be called when deciding which messages to drop.
     #   By dropping lower priority messages (info and debug level messages, for example) you can
     #   increase the chances of higher priority messages getting through when the Client is
-    #   having connection issues, or if your logstash server goes down for a short period of time.
+    #   having connection issues, or if the receiver goes down for a short period of time.
+    #
+    # * `options.reconnect` - time, in ms, to wait between reconnect attempts.  Defaults to 3
+    #   seconds.
     #
     constructor: (@tlsConnectOptions, @options={}) ->
         @connected = false
@@ -47,6 +51,7 @@ class Client extends EventEmitter
 
         @_queue = []
         @_maxQueueSize = @options.maxQueueSize ? DEFAULT_QUEUE_SIZE
+        @_reconnectTime = @options.reconnect ? DEFAULT_RECONNECT_TIME_IN_MS
 
         @_connect()
 
@@ -60,8 +65,8 @@ class Client extends EventEmitter
     # * `file` (optional) - the name of the log file.
     # * `offset` (optional) an integer - the offset of the line in the log file.
     #
-    # Additional field in `data` will be passed up to logstash.  Logstash will add these to the log
-    # entry.
+    # Additional field in `data` will be passed up to the receiver.  If you are sending to Logstash,
+    # it will add these to the log entry.
     #
     writeDataFrame: (data) ->
         throw new Error "Client is closed" if @_closed
@@ -117,8 +122,7 @@ class Client extends EventEmitter
         @_socket = null
 
         if !@_closed
-            # TODO: Retry connection with backoff
-            @_connect()
+            setTimeout (=> @_connect()), @_reconnectTime
 
     _queueMessage: (data) ->
         @_queue.push data

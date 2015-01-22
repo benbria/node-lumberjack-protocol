@@ -11,7 +11,7 @@ Creates a Client.
 
 `tlsConnectOptions` is passed directly to
 [`tls.connect()`](http://nodejs.org/api/tls.html#tls_tls_connect_options_callback) to create the
-TLS connection to the logstash server.  At a minimum, you should set `host` and `port`.
+TLS connection to the receiver (the logstash server.)  At a minimum, you should set `host` and `port`.
 
 `clientOptions` consists of:
 
@@ -27,13 +27,15 @@ TLS connection to the logstash server.  At a minimum, you should set `host` and 
 * `allowDrop(data)` - this will be called when deciding which messages to drop.
   By dropping lower priority messages (info and debug level messages, for example) you can
   increase the chances of higher priority messages getting through when the Client is
-  having connection issues, or if your logstash server goes down for a short period of time.
+  having connection issues, or if the receiver goes down for a short period of time.
   This funciton is used both to drop messages from the queue while disconnected, and to drop
   messages if the receiver is taking too long to acknowledge messages.
 
   Note that this function will be called on all messages in the queue every time the queue grows
   too large - if this function does not return true for any messages, then it could be called
   for every message in the queue every time a message is queued.
+
+* `options.reconnect` - time, in ms, to wait between reconnect attempts.  Defaults to 3 seconds.
 
 ## Events
 
@@ -61,8 +63,8 @@ Client inherits from [EventEmitter](http://nodejs.org/api/events.html#events_cla
 * `file` (optional) - the name of the log file.
 * `offset` (optional) an integer - the offset of the line in the log file.
 
-Additional field in `data` will be passed up to logstash.  Logstash will add these to the log
-entry.
+Additional field in `data` will be passed up to the receiver.  If you are sending to Logstash,
+it will add these to the log entry.
 
 ### Client.close()
 
