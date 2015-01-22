@@ -4,7 +4,7 @@ What is it?
 This is a node.js implementation of the [lumberjack protocol](https://github.com/elasticsearch/logstash-forwarder/blob/master/PROTOCOL.md) from [logstash-forwarder](https://github.com/elasticsearch/logstash-forwarder).
 
 At the moment, only the sender-side implementation is complete.  This is an excellent way to send
-encrypted logs from your node.js app to your logstash instance.
+encrypted logs from your node.js app to your logstash instance.  If you are using [bunyan](https://github.com/trentm/node-bunyan), be sure to check out [bunyan-lumberjack](https://github.com/benbria/node-bunyan-lumberjack).
 
 Contents
 --------
