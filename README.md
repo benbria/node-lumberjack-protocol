@@ -12,7 +12,7 @@ Contents
 * [Installation](#installation)
 * [Usage](#usage)
 * [API](https://github.com/benbria/node-lumberjack-protocol/blob/master/API.md)
-# [Caveats](#caveats)
+* [Caveats](#caveats)
 * [Troubleshooting](#troubleshooting)
 
 
