@@ -1,0 +1,151 @@
+assert           = require 'assert'
+{EventEmitter}   = require 'events'
+
+ClientSocket     = require './ClientSocket'
+
+DEFAULT_QUEUE_SIZE = 500
+
+# Connects to a lumberjack receiver and sends messages.
+#
+# `Client` connects to the lumberjack receiver in the background and will automatically reconnect
+# if the connection is lost.  Messages sent to the `Client` while disconnected will be queued
+# and sent automatically once the connection is re-established.
+#
+# Emits:
+# * `connect` when the Client connects to the receiver.
+#
+# * `disconnect(err)` when the client disconnects from the receiver, or when the client fails to
+#   connect to the receiver.  `err` will be the error which caused the disconnect, if there is one.
+#   The Client will automatically reconnect.
+#
+# * `dropped(count)` if messages are dropped because the receiver is not acknowledging messages
+#   fast enough.
+#
+class Client extends EventEmitter
+
+    # * `tlsConnectOptions` are options used to connect to the receiver.  Any options which can be
+    #   passed to `tls.connect()` can be passed here.
+    #
+    # * `options.windowSize` - passed on to the ClientSocket.
+    #
+    # * `options.maxQueueSize` - the maximum number of messages to queue while disconnected.
+    #   If this limit is hit, all messages in the queue will be filtered with
+    #   `options.allowDrop(data)`.  Only messages which this function returns true for will be
+    #   removed from the queue.  If there are still too many messages in the queue at this point
+    #   the the oldest messages will be dropped.  Defaults to 500.
+    #
+    # * `options.allowDrop(data)` - this will be called when deciding which messages to drop.
+    #   By dropping lower priority messages (info and debug level messages, for example) you can
+    #   increase the chances of higher priority messages getting through when the Client is
+    #   having connection issues, or if your logstash server goes down for a short period of time.
+    #
+    constructor: (@tlsConnectOptions, @options={}) ->
+        @connected = false
+        @_closed = false
+
+        @_hostname = require('os').hostname()
+
+        @_queue = []
+        @_maxQueueSize = @options.maxQueueSize ? DEFAULT_QUEUE_SIZE
+
+        @_connect()
+
+        @queueHighWatermark = 0
+
+    # `data` here should be a `{file, host, line, offset}` object, where:
+    #
+    # * `host` - the hostname of the host that generated the line.  Defaults to os.hostname().
+    # * `line` - the line from the log file.  If you are sending to a logstash receiver, this field
+    #   is mandatory - logstash will freak out if `line` is missing.
+    # * `file` (optional) - the name of the log file.
+    # * `offset` (optional) an integer - the offset of the line in the log file.
+    #
+    # Additional field in `data` will be passed up to logstash.  Logstash will add these to the log
+    # entry.
+    #
+    writeDataFrame: (data) ->
+        throw new Error "Client is closed" if @_closed
+
+        # This is modeled after https://github.com/elasticsearch/logstash-forwarder/blob/master/publisher1.go
+        # `writeDataFrame()`.
+        #
+        if !@connected
+            # Queue this for later
+            @_queueMessage data
+
+        else
+            if !data.host?
+                # Clone `data`
+                record = {}
+                record[key] = value for key, value of data
+
+                record.host = @_hostname
+                data = record
+
+            @_socket.writeDataFrame data, (err) =>
+                if err? and !(err instanceof @_socket.DroppedError)
+                    # Couldn't send the message - queue for later.
+                    @_queueMessage data
+
+    # Shut down this client.
+    close: ->
+        @_closed = true
+        @_disconnect()
+
+    _connect: ->
+        return if @_closed
+
+        @_socket = new ClientSocket @options
+        @_socket.connect @tlsConnectOptions
+
+        @_socket.on 'connect', =>
+            @connected = true
+            @emit 'connect'
+            @_sendQueuedMessages()
+
+        @_socket.on 'end', @_disconnect
+
+        @_socket.on 'error', @_disconnect
+
+        @_socket.on 'dropped', (count) => @emit 'dropped', count
+
+    _disconnect: (err) =>
+        @emit 'disconnect', err
+        @connected = false
+
+        @_socket?.removeAllListeners()
+        @_socket = null
+
+        if !@_closed
+            # TODO: Retry connection with backoff
+            @_connect()
+
+    _queueMessage: (data) ->
+        @_queue.push data
+
+        @queueHighWatermark = Math.max @_queue.length, @queueHighWatermark
+
+        # If the queue is too big, shrink it.
+        if @_queue.length >= @_maxQueueSize
+            originalQueueSize = @_queue.length
+            if @options.allowDrop?
+                @_queue = @_queue.filter @options.allowDrop
+
+            # If the queue is still too big, remove items from the head of the queue.
+            @_queue.shift() while @_queue.length >= @_maxQueueSize
+
+            @emit 'dropped', originalQueueSize - @_queue.length
+
+    _sendQueuedMessages: ->
+        return if @_queue.length is 0
+
+        message = @_queue.shift()
+        @_socket.writeDataFrame message, (err) =>
+            if err? and !(err instanceof @_socket.DroppedError)
+                # Put this back at the start of the queue and we'll try later.
+                @_queue.unshift message
+            else
+                # Send some more messages.
+                setImmediate => @_sendQueuedMessages()
+
+module.exports = Client

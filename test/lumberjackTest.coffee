@@ -1,5 +1,4 @@
 {expect} = require 'chai'
-{Promise} = require 'es6-promise'
 {Buffer} = require 'buffer'
 lumberjack = require '../src/lumberjack'
 

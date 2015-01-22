@@ -1,5 +1,5 @@
 {
-  "name": "logstash-forwarder",
+  "name": "lumberjack-proto",
   "description": "Node.js implementation of the lumberjack protocol",
   "keywords": [
     "logstash",

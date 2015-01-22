@@ -57,6 +57,7 @@ exports.makeAckFrame = (sequence) -> makeUint32Frame FRAME_TYPE.ACK, sequence
 # Returns a Buffer.
 #
 exports.makeDataFrame = (sequence, data) ->
+    assert data?, "Need data!"
     version = '1'
     frameType = FRAME_TYPE.DATA
 
@@ -66,7 +67,6 @@ exports.makeDataFrame = (sequence, data) ->
     .filter (key) -> data[key]?
     .map (key) ->
         # Convert to a string.
-        # TODO: If an object, convert to JSON?
         value = "" + data[key]
 
         keyLength = Buffer.byteLength(key, 'utf8')
@@ -108,11 +108,11 @@ DEFAULT_READ_BUFFER_SIZE = 4096
 
 # Parses lumberjack messages.
 #
-# You feed data to LumberjackParser by repeatedly calling `write()`.  LumberjackParser will
-# emit `data` events as frames are parse from the input, or alternatively you can fetch
-# frames by calling `parser.read()`.
+# Parser is a Transform stream.  You feed data to LumberjackParser by repeatedly calling `write()`
+# or by piping data from a stream.  LumberjackParser will emit `data` events as frames are parsed
+# from the input, or alternatively you can fetch frames by calling `parser.read()`.
 #
-# At the moment, only support for ACK frames is included.
+# At the moment, only support for ACK frames is implemented.
 #
 # Emits:
 #
@@ -123,29 +123,32 @@ DEFAULT_READ_BUFFER_SIZE = 4096
 #     sequence number fo the most recently seen frame.
 #
 class exports.Parser extends Transform
-    # TODO: Make this a full-blown writable object so we can just pipe to it.
     constructor: ->
         super
         @_writableState.objectMode = false;
         @_readableState.objectMode = true;
-        @_buffer = new Buffer DEFAULT_READ_BUFFER_SIZE
+        @_buffer = null
         @_readBytes = 0
 
     _enlargeBuffer: ->
-        newBuffer = new Buffer(@_buffer.length * 2)
+        newBuffer = new Buffer(Math.max(@_buffer.length * 2, DEFAULT_READ_BUFFER_SIZE))
         @_buffer.copy newBuffer
         @_buffer = newBuffer
 
     # Call when more data is available.  `buf` is a Buffer containing the new data.
     _transform: (chunk, encoding, done) ->
-        while (@_readBytes + chunk.length) > @_buffer.length
-            # We read more data from the socket than we can store in @_buffer - make the buffer
-            # bigger.
-            @_enlargeBuffer()
+        if !@_buffer?
+            @_buffer = chunk
+            @_readBytes = chunk.length
+        else
+            while (@_readBytes + chunk.length) > @_buffer.length
+                # We read more data from the socket than we can store in @_buffer - make the buffer
+                # bigger.
+                @_enlargeBuffer()
 
-        # Write the data we received to the end of @_buffer
-        chunk.copy @_buffer, @_readBytes
-        @_readBytes += chunk.length
+            # Write the data we received to the end of @_buffer
+            chunk.copy @_buffer, @_readBytes
+            @_readBytes += chunk.length
 
         try
             @_parse()
@@ -176,11 +179,16 @@ class exports.Parser extends Transform
                 else
                     throw new Error "Don't know how to parse frame of type '#{frameType}'' (#{frameTypeHex})"
 
-        # Copy any unused bytes to the start of a new buffer
-        oldBuffer = @_buffer
-        @_buffer = new Buffer DEFAULT_READ_BUFFER_SIZE
-        while (@_readBytes - consumed) > @_buffer.length
-            @_enlargeBuffer
-        oldBuffer.copy @_buffer, 0, consumed, @_readBytes
-        @_readBytes -= consumed
+        if consumed is @_readBytes
+            # We used all the data - just discard our buffer.
+            @_buffer = null
+
+        else
+            # Copy any unused bytes to the start of a new buffer
+            oldBuffer = @_buffer
+            @_buffer = new Buffer DEFAULT_READ_BUFFER_SIZE
+            while (@_readBytes - consumed) > @_buffer.length
+                @_enlargeBuffer
+            oldBuffer.copy @_buffer, 0, consumed, @_readBytes
+            @_readBytes -= consumed
 
