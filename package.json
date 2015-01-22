@@ -5,6 +5,7 @@
     "logstash",
     "logstash forwarder",
     "lumberjack",
+    "lumberjack protocol",
     "logs"
   ],
   "version": "0.1.0",
@@ -31,7 +32,6 @@
   "devDependencies": {
     "chai": "^1.9.1",
     "coffee-script": "^1.8.0",
-    "es6-promise": "^2.0.1",
     "mocha": "^1.21.4"
   },
   "engines": {
