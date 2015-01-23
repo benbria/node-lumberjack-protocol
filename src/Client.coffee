@@ -5,6 +5,7 @@ ClientSocket     = require './ClientSocket'
 
 DEFAULT_QUEUE_SIZE = 500
 DEFAULT_RECONNECT_TIME_IN_MS = 3000
+MIN_TIME_BETWEEN_DROPPED_EVENTS_IN_MS = 1000
 
 # Connects to a lumberjack receiver and sends messages.
 #
@@ -52,8 +53,13 @@ class Client extends EventEmitter
         @_queue = []
         @_maxQueueSize = @options.maxQueueSize ? DEFAULT_QUEUE_SIZE
         @_reconnectTime = @options.reconnect ? DEFAULT_RECONNECT_TIME_IN_MS
+        @_minTimeBetweenDropEvents = @options.minTimeBetweenDropEvents ? MIN_TIME_BETWEEN_DROPPED_EVENTS_IN_MS
 
         @_connect()
+
+        @_lastDropEventTime = null
+        @_dropTimer = null
+        @_dropCount = 0
 
         @queueHighWatermark = 0
 
@@ -100,8 +106,13 @@ class Client extends EventEmitter
     _connect: ->
         return if @_closed
 
-        @_socket = new ClientSocket @options
-        @_socket.connect @tlsConnectOptions
+        # Handy hook for unit testing.
+        if @options._connect?
+            @_socket = @options._connect this, @tlsConnectOptions
+
+        else
+            @_socket = new ClientSocket @options
+            @_socket.connect @tlsConnectOptions
 
         @_socket.on 'connect', =>
             @connected = true
@@ -112,7 +123,7 @@ class Client extends EventEmitter
 
         @_socket.on 'error', @_disconnect
 
-        @_socket.on 'dropped', (count) => @emit 'dropped', count
+        @_socket.on 'dropped', (count) => @_dropped count
 
     _disconnect: (err) =>
         @emit 'disconnect', err
@@ -138,7 +149,7 @@ class Client extends EventEmitter
             # If the queue is still too big, remove items from the head of the queue.
             @_queue.shift() while @_queue.length >= @_maxQueueSize
 
-            @emit 'dropped', originalQueueSize - @_queue.length
+            @_dropped originalQueueSize - @_queue.length
 
     _sendQueuedMessages: ->
         return if @_queue.length is 0
@@ -151,5 +162,23 @@ class Client extends EventEmitter
             else
                 # Send some more messages.
                 setImmediate => @_sendQueuedMessages()
+
+    _dropped: (count) ->
+        @_dropCount += count
+
+        # If there's already a timer running, wait for the timer to send anything.
+        if @_dropTimer?
+            return
+
+        sendDropEvent = =>
+            @emit 'dropped', @_dropCount
+            @_dropCount = 0
+            @_dropTimer = null
+            @_lastDropEventTime = Date.now()
+
+        if !@_lastDropEventTime? or @_lastDropEventTime + @_minTimeBetweenDropEvents < Date.now()
+            sendDropEvent()
+        else
+            @_dropTimer = setTimeout(sendDropEvent, @_minTimeBetweenDropEvents)
 
 module.exports = Client

@@ -115,7 +115,6 @@ class ClientSocket extends EventEmitter
         drop = ( (@_nextSequenceNumber - @lastAck) > (@_windowSize * SEND_WINDOW_SIZE_FACTOR) ) and
                 (!@options.allowDrop? or !!@options.allowDrop(data))
         if drop
-            # TODO: Rate limit 'dropped' events.
             @emit 'dropped', 1
             done new DroppedError "Dropped message"
         else
