@@ -72,8 +72,7 @@ there are certain types of messages you want to ensure get through (errors, for 
 Troubleshooting
 ===============
 
-The most common reason you're not going to be able to connect is because node.js throws an
-Error that says "Hostname/IP doesn't match certificate's altnames".
+### Hostname/IP doesn't match certificate's altnames
 
 * If you are connecting to a server using a hostname, the hostname must match either the subject's
   CN in the certificate, or one of the certificate's subjectAltNames.
@@ -88,11 +87,21 @@ Error that says "Hostname/IP doesn't match certificate's altnames".
             ...
         });
 
-* If you're especially lazy, you can do this the very insecure way, but note this is not advisable
-  for a production system:
+* If you're doing testing, you can do this the very insecure way, but note this is **not secure**:
 
         var lj = lumberjack.client({
             rejectUnauthorized: false,
             ...
         });
+        
+  You may also see suggestions to set an enviroment variable:
+  
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+      
+  which is effectively the same thing.  Both of these options will bypass certificate checks which
+  will make it easy for a third party to intercept your traffic using a man-in-the-middle attack.
+  Do not set these options unless you are very sure you know what you are doing.
 
+### Error: self signed certificate, code: DEPTH_ZERO_SELF_SIGNED_CERT
+
+Node.js does not like self signed certificates.  See https://github.com/joyent/node/issues/9087.
