@@ -31,8 +31,8 @@ reconnect, and queue any messages that you try to send while disconnected:
     var fs = require('fs');
 
     var connectionOptions = {
-        host: "192.168.10.11",
-        port: 9997,
+        host: "myserver.com",
+        port: 5000,
         ca: [fs.readFileSync('./logstash.crt', {encoding: 'utf-8'})]
     };
 
@@ -104,4 +104,7 @@ Troubleshooting
 
 ### Error: self signed certificate, code: DEPTH_ZERO_SELF_SIGNED_CERT
 
-Node.js does not like self signed certificates.  See https://github.com/joyent/node/issues/9087.
+If you're using a self-signed certificate, be sure you are passing it in the `ca` parameter to
+the `connectOptions`.  You can fetch the certificate your server is using with openssl:
+
+    openssl s_client -showcerts -connect myserver.com:5000 -tls1
