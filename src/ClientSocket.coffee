@@ -14,6 +14,7 @@ DroppedError = (message) ->
     @message = message
 DroppedError.prototype = Object.create(Error.prototype)
 
+id = 0
 
 # A simple lumberjack client.
 #
@@ -44,6 +45,7 @@ class ClientSocket extends EventEmitter
     constructor: (@options={}) ->
         @connected = false
         @_closed = false
+        @id = id++
 
         @_windowSize = @options.windowSize ? DEFAULT_WINDOW_SIZE
 
@@ -72,6 +74,9 @@ class ClientSocket extends EventEmitter
         @_socket.pipe @_parser
 
     _disconnect: (err) =>
+        # Don't emit any events if we are already closed.
+        return if @_closed
+
         if err
             @emit 'error', err
         else

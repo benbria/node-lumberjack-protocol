@@ -129,11 +129,16 @@ class Client extends EventEmitter
         @emit 'disconnect', err
         @connected = false
 
+        @_socket.close()
         @_socket?.removeAllListeners()
         @_socket = null
 
-        if !@_closed
-            setTimeout (=> @_connect()), @_reconnectTime
+        if !@_closed and !@_connectTimer?
+            @_connectTimer = setTimeout (
+                =>
+                  @_connectTimer = null
+                  @_connect()
+                ), @_reconnectTime
 
     _queueMessage: (data) ->
         @_queue.push data
@@ -152,7 +157,7 @@ class Client extends EventEmitter
             @_dropped originalQueueSize - @_queue.length
 
     _sendQueuedMessages: ->
-        return if @_queue.length is 0
+        return if @_queue.length is 0 or !@_socket?
 
         message = @_queue.shift()
         @_socket.writeDataFrame message, (err) =>
