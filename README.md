@@ -1,5 +1,10 @@
 [![NPM](https://nodei.co/npm/lumberjack-protocol.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/lumberjack-protocol/)
 
+[![Build Status](https://travis-ci.org/benbria/node-lumberjack-protocol.svg?branch=master)](https://travis-ci.org/benbria/node-lumberjack-protocol)
+[![Coverage Status](https://coveralls.io/repos/benbria/node-lumberjack-protocol/badge.svg)](https://coveralls.io/r/benbria/node-lumberjack-protocol)
+[![Dependency Status](https://david-dm.org/benbria/node-lumberjack-protocol.svg)](https://david-dm.org/benbria/node-lumberjack-protocol)
+[![devDependency Status](https://david-dm.org/benbria/node-lumberjack-protocol/dev-status.svg)](https://david-dm.org/benbria/node-lumberjack-protocol#info=devDependencies)
+
 What is it?
 ===========
 
