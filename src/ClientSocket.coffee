@@ -9,7 +9,7 @@ DEFAULT_WINDOW_SIZE = 1000
 SEND_WINDOW_SIZE_FACTOR = 10
 
 DroppedError = (message) ->
-    Error.captureStackTrace this, TooShortError
+    Error.captureStackTrace this, lumberjack.TooShortError
     @name = 'DroppedError'
     @message = message
 DroppedError.prototype = Object.create(Error.prototype)
