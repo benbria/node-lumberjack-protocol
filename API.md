@@ -15,7 +15,8 @@ TLS connection to the receiver (the logstash server.)  At a minimum, you should 
 
 `clientOptions` consists of:
 
-* `windowSize` - the windowSize to send to the receiver (see [caveats](#caveats) section below
+* `windowSize` - the windowSize to send to the receiver (see 
+  [caveats](https://github.com/benbria/node-lumberjack-protocol#caveats) section 
   for a discussion about how `lumberjack-protocol` treats the `windowSize`.)  Defaults to 1000.
 
 * `maxQueueSize` - the maximum number of messages to queue while disconnected.
@@ -28,7 +29,7 @@ TLS connection to the receiver (the logstash server.)  At a minimum, you should 
   By dropping lower priority messages (info and debug level messages, for example) you can
   increase the chances of higher priority messages getting through when the Client is
   having connection issues, or if the receiver goes down for a short period of time.
-  This funciton is used both to drop messages from the queue while disconnected, and to drop
+  This function is used both to drop messages from the queue while disconnected, and to drop
   messages if the receiver is taking too long to acknowledge messages.
 
   Note that this function will be called on all messages in the queue every time the queue grows
