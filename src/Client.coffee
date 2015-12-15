@@ -44,6 +44,9 @@ class Client extends EventEmitter
     # * `options.reconnect` - time, in ms, to wait between reconnect attempts.  Defaults to 3
     #   seconds.
     #
+    # * `options.unref` - if true, will call [unref](https://nodejs.org/api/net.html#net_socket_unref) on the
+    #   underlying socket.  This will allow the program to exit if this is the only active socket in the event system.
+    #
     constructor: (@tlsConnectOptions, @options={}) ->
         @connected = false
         @_closed = false
@@ -124,6 +127,8 @@ class Client extends EventEmitter
         @_socket.on 'error', @_disconnect
 
         @_socket.on 'dropped', (count) => @_dropped count
+
+        if @options.unref then @_socket.unref()
 
     _disconnect: (err) =>
         @emit 'disconnect', err

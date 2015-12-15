@@ -1,6 +1,7 @@
 {expect}       = require 'chai'
 {Buffer}       = require 'buffer'
 {EventEmitter} = require 'events'
+sinon          = require 'sinon'
 Client         = require '../src/Client'
 
 # Dummy ClientSocket implementation that just drops messages.
@@ -11,6 +12,8 @@ class DropSocket extends EventEmitter
     writeDataFrame: (data, done) ->
         @emit 'dropped', 1
         done()
+
+    unref: sinon.spy()
 
 describe 'Client', ->
     it 'should group together dropped messages if they come together too quickly', (done) ->
@@ -38,3 +41,12 @@ describe 'Client', ->
         client.writeDataFrame {line: 'foo'}
         client.writeDataFrame {line: 'foo'}
         client.writeDataFrame {line: 'foo'}
+
+    it 'should call unref on the socket if options.unref is specified', ->
+        client = new Client {}, {
+            minTimeBetweenDropEvents: 10,
+            _connect: -> return new DropSocket()
+            unref: true
+        }
+
+        sinon.assert.calledOnce(client._socket.unref)

@@ -15,8 +15,8 @@ TLS connection to the receiver (the logstash server.)  At a minimum, you should 
 
 `clientOptions` consists of:
 
-* `windowSize` - the windowSize to send to the receiver (see 
-  [caveats](https://github.com/benbria/node-lumberjack-protocol#caveats) section 
+* `windowSize` - the windowSize to send to the receiver (see
+  [caveats](https://github.com/benbria/node-lumberjack-protocol#caveats) section
   for a discussion about how `lumberjack-protocol` treats the `windowSize`.)  Defaults to 1000.
 
 * `maxQueueSize` - the maximum number of messages to queue while disconnected.
@@ -37,6 +37,9 @@ TLS connection to the receiver (the logstash server.)  At a minimum, you should 
   for every message in the queue every time a message is queued.
 
 * `options.reconnect` - time, in ms, to wait between reconnect attempts.  Defaults to 3 seconds.
+
+* `options.unref` - if true, will call [unref](https://nodejs.org/api/net.html#net_socket_unref) on the underlying
+  socket.  This will allow the program to exit if this is the only active socket in the event system.
 
 ## Events
 
@@ -75,6 +78,3 @@ will be lost.
 ### Client.queueHighWatermark
 
 A readable property which returns the largest size the queue has ever been.
-
-
-
