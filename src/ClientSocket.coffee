@@ -131,4 +131,7 @@ class ClientSocket extends EventEmitter
         @_closed = true
         @_disconnect()
 
+    unref: ->
+        @_socket.unref()
+
 module.exports = ClientSocket
