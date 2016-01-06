@@ -135,3 +135,4 @@ class ClientSocket extends EventEmitter
         @_socket.unref()
 
 module.exports = ClientSocket
+module.exports.DroppedError = DroppedError

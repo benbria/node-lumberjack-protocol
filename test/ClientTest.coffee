@@ -3,17 +3,24 @@
 {EventEmitter} = require 'events'
 sinon          = require 'sinon'
 Client         = require '../src/Client'
+ClientSocket   = require '../src/ClientSocket'
 
 # Dummy ClientSocket implementation that just drops messages.
 class DropSocket extends EventEmitter
-    constructor: ->
-        setTimeout (=> @emit 'connect'), 1
+    constructor: (options={}) ->
+        if options.autoConnect ? true
+            setTimeout (=> @doConnect()), 1
+
+    doConnect: ->
+        @emit 'connect'
 
     writeDataFrame: (data, done) ->
         @emit 'dropped', 1
-        done()
+        done new ClientSocket.DroppedError "Dropped message"
 
     unref: sinon.spy()
+
+    close: ->
 
 describe 'Client', ->
     it 'should group together dropped messages if they come together too quickly', (done) ->
@@ -31,8 +38,10 @@ describe 'Client', ->
                 dropCount++
 
                 if dropCount is 1
+                    # Drop a single message for the first message
                     expect(count).to.equal 1
                 if dropCount is 2
+                    # But we should see the next two messages grouped into a single "dropped" event.
                     expect(count).to.equal 2
                     done()
             catch err
@@ -50,3 +59,21 @@ describe 'Client', ->
         }
 
         sinon.assert.calledOnce(client._socket.unref)
+
+    it 'should queue messages if the socket has disconnected', (done) ->
+        client = new Client {}, {_connect: -> return new DropSocket(autoConnect: true)}
+
+        client.on 'connect', ->
+            client._disconnect()
+            client.writeDataFrame {line: 'foo'}
+            try
+                expect(client.queueHighWatermark).to.equal 1
+            catch err
+                done err
+            done()
+
+    it 'should let you close the socket more than once (and do nothing on the second call)', ->
+        client = new Client {}, {_connect: -> return new DropSocket()}
+
+        client.close()
+        client.close()

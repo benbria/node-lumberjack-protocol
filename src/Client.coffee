@@ -83,7 +83,7 @@ class Client extends EventEmitter
         # This is modeled after https://github.com/elasticsearch/logstash-forwarder/blob/master/publisher1.go
         # `writeDataFrame()`.
         #
-        if !@connected
+        if !@connected or !@_socket
             # Queue this for later
             @_queueMessage data
 
@@ -134,9 +134,10 @@ class Client extends EventEmitter
         @emit 'disconnect', err
         @connected = false
 
-        @_socket.close()
-        @_socket?.removeAllListeners()
-        @_socket = null
+        if @_socket?
+            @_socket.close()
+            @_socket?.removeAllListeners()
+            @_socket = null
 
         if !@_closed and !@_connectTimer?
             @_connectTimer = setTimeout (
@@ -166,7 +167,7 @@ class Client extends EventEmitter
 
         message = @_queue.shift()
         @_socket.writeDataFrame message, (err) =>
-            if err? and !(err instanceof @_socket.DroppedError)
+            if err? and !(err instanceof ClientSocket.DroppedError)
                 # Put this back at the start of the queue and we'll try later.
                 @_queue.unshift message
             else
