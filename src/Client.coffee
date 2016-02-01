@@ -97,7 +97,7 @@ class Client extends EventEmitter
                 data = record
 
             @_socket.writeDataFrame data, (err) =>
-                if err? and !(err instanceof @_socket.DroppedError)
+                if err? and !(err instanceof ClientSocket.DroppedError)
                     # Couldn't send the message - queue for later.
                     @_queueMessage data
 
