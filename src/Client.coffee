@@ -121,14 +121,13 @@ class Client extends EventEmitter
             @connected = true
             @emit 'connect'
             @_sendQueuedMessages()
+            if @options.unref then @_socket.unref()
 
         @_socket.on 'end', @_disconnect
 
         @_socket.on 'error', @_disconnect
 
         @_socket.on 'dropped', (count) => @_dropped count
-
-        if @options.unref then @_socket.unref()
 
     _disconnect: (err) =>
         @emit 'disconnect', err
