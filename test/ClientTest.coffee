@@ -57,8 +57,8 @@ describe 'Client', ->
             _connect: -> return new DropSocket()
             unref: true
         }
-
-        sinon.assert.calledOnce(client._socket.unref)
+        client.on 'connect', ->
+            sinon.assert.calledOnce(client._socket.unref)
 
     it 'should queue messages if the socket has disconnected', (done) ->
         client = new Client {}, {_connect: -> return new DropSocket(autoConnect: true)}
