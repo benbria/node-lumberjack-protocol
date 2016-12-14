@@ -23,24 +23,34 @@ class DropSocket extends EventEmitter
     close: ->
 
 describe 'Client', ->
+    sandbox = null
+
+    beforeEach ->
+        sandbox = sinon.sandbox.create()
+
+    afterEach ->
+        sandbox.restore()
+
     it 'should group together dropped messages if they come together too quickly', (done) ->
-        dropCount = 0
+        dropEventCount = 0
 
         client = new Client {}, {
             minTimeBetweenDropEvents: 10,
             _connect: -> return new DropSocket()
         }
 
+        sinon.stub Date, "now", -> 1481732966204
+
         client.on 'disconnect', -> done new Error "Should not disconnect."
 
         client.on 'dropped', (count) ->
             try
-                dropCount++
+                dropEventCount++
 
-                if dropCount is 1
+                if dropEventCount is 1
                     # Drop a single message for the first message
                     expect(count).to.equal 1
-                if dropCount is 2
+                if dropEventCount is 2
                     # But we should see the next two messages grouped into a single "dropped" event.
                     expect(count).to.equal 2
                     done()
