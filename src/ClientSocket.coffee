@@ -69,7 +69,7 @@ class ClientSocket extends EventEmitter
 
         @_socket.on 'error', @_disconnect
 
-        @_socket.on 'end', => @_disconnect()
+        @_socket.on 'end', @_disconnect
 
         @_socket.pipe @_parser
 
@@ -85,6 +85,8 @@ class ClientSocket extends EventEmitter
         @connected = false
 
         @_socket?.removeAllListeners()
+        # Issue #8: Add a dummy error handler here, so if the socket keeps spewing errors, we'll ignore them.
+        @_socket.on "error", ->
         @_socket = null
 
         # Since we're not going to send any more events...
