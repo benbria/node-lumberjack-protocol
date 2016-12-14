@@ -51,14 +51,19 @@ describe 'Client', ->
         client.writeDataFrame {line: 'foo'}
         client.writeDataFrame {line: 'foo'}
 
-    it 'should call unref on the socket if options.unref is specified', ->
+    it 'should call unref on the socket if options.unref is specified', (done) ->
         client = new Client {}, {
             minTimeBetweenDropEvents: 10,
             _connect: -> return new DropSocket()
             unref: true
         }
         client.on 'connect', ->
-            sinon.assert.calledOnce(client._socket.unref)
+            setImmediate ->
+                try
+                    sinon.assert.calledOnce(client._socket.unref)
+                catch err
+                    return done err
+                done()
 
     it 'should queue messages if the socket has disconnected', (done) ->
         client = new Client {}, {_connect: -> return new DropSocket(autoConnect: true)}

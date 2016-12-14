@@ -10,15 +10,11 @@
   ],
   "version": "1.0.5",
   "author": "Jason Walton <dev@lucid.thedreaming.org> (https://github.com/jwalton)",
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "https://raw.github.com/benbria/node-lumberjack-protocol/master/LICENSE"
-    }
-  ],
+  "license": "MIT",
   "scripts": {
     "prepublish": "coffee -c -o lib src && mocha test",
-    "test": "mocha && istanbul report text-summary lcov"
+    "test": "mocha && istanbul report text-summary lcov",
+    "clean": "rm -rf coverage lib node_modules"
   },
   "main": "./lib/index.js",
   "directories": {
