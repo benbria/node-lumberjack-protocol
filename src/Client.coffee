@@ -130,13 +130,14 @@ class Client extends EventEmitter
         @_socket.on 'dropped', (count) => @_dropped count
 
     _disconnect: (err) =>
-        @emit 'disconnect', err
         @connected = false
 
         if @_socket?
             @_socket.close()
             @_socket?.removeAllListeners()
             @_socket = null
+
+        @emit 'disconnect', err
 
         if !@_closed and !@_connectTimer?
             @_connectTimer = setTimeout (
